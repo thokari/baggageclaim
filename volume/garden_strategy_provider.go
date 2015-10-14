@@ -26,21 +26,30 @@ func NewGardenStrategyProvider(filesystem Filesystem, runner command_runner.Comm
 }
 
 func (p *gardenStrategyProvider) ProvideStrategy(rootFsPath string) (Strategy, error) {
-	initVolume, err := p.filesystem.NewVolume(shaID(rootFsPath))
+	handle := shaID(rootFsPath)
+
+	liveVolume, exists, err := p.filesystem.LookupVolume(handle)
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.runner.Run(exec.Command("cp", "-R", rootFsPath, initVolume.DataPath()))
-	if err != nil {
-		initVolume.Destroy()
-		return nil, err
-	}
+	if !exists {
+		initVolume, err := p.filesystem.NewVolume(handle)
+		if err != nil {
+			return nil, err
+		}
 
-	liveVolume, err := initVolume.Initialize()
-	if err != nil {
-		initVolume.Destroy()
-		return nil, err
+		err = p.runner.Run(exec.Command("cp", "-R", rootFsPath, initVolume.DataPath()))
+		if err != nil {
+			initVolume.Destroy()
+			return nil, err
+		}
+
+		liveVolume, err = initVolume.Initialize()
+		if err != nil {
+			initVolume.Destroy()
+			return nil, err
+		}
 	}
 
 	return &COWStrategy{ParentHandle: liveVolume.Handle()}, nil

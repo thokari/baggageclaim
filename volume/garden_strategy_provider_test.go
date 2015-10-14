@@ -43,13 +43,21 @@ var _ = Describe("GardenStrategyProvider", func() {
 	Describe("ProvideStrategy", func() {
 		Describe("for a directory rootfs", func() {
 			Context("when it is used for the fist time", func() {
+				BeforeEach(func() {
+					filesystem.LookupVolumeReturns(nil, false, nil)
+				})
+
 				It("creates a volume for the rootfs", func() {
+					rootFsSha := fmt.Sprintf("%x", sha256.Sum256([]byte(rootFsPath)))
 					_, err := strategyProvider.ProvideStrategy(rootFsPath)
 					Expect(err).NotTo(HaveOccurred())
 
+					Expect(filesystem.LookupVolumeCallCount()).To(Equal(1))
+					rootFsId := filesystem.LookupVolumeArgsForCall(0)
+					Expect(rootFsId).To(Equal(rootFsSha))
+
 					Expect(filesystem.NewVolumeCallCount()).To(Equal(1))
-					Expect(filesystem.NewVolumeArgsForCall(0)).To(Equal(
-						fmt.Sprintf("%x", sha256.Sum256([]byte(rootFsPath)))))
+					Expect(filesystem.NewVolumeArgsForCall(0)).To(Equal(rootFsSha))
 				})
 
 				Context("when volume creation fails", func() {
@@ -125,6 +133,40 @@ var _ = Describe("GardenStrategyProvider", func() {
 					strategy, err := strategyProvider.ProvideStrategy(rootFsPath)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(strategy).NotTo(BeNil())
+				})
+			})
+
+			Context("when lookup volume fails", func() {
+				BeforeEach(func() {
+					filesystem.LookupVolumeReturns(nil, false, errors.New("oh no"))
+				})
+
+				It("should returns the error", func() {
+					_, err := strategyProvider.ProvideStrategy(rootFsPath)
+					Expect(err).To(MatchError("oh no"))
+				})
+			})
+
+			Context("when the rootfs has been reused", func() {
+				BeforeEach(func() {
+					liveVolume.HandleReturns("vol-handle")
+					filesystem.LookupVolumeReturns(liveVolume, true, nil)
+				})
+
+				It("returns a strategy", func() {
+					strategy, err := strategyProvider.ProvideStrategy(rootFsPath)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(strategy).NotTo(BeNil())
+				})
+
+				It("does not copy rootfs to data path", func() {
+					strategyProvider.ProvideStrategy(rootFsPath)
+					Expect(runner.ExecutedCommands()).To(HaveLen(0))
+				})
+
+				It("does not initialize the volume", func() {
+					strategyProvider.ProvideStrategy(rootFsPath)
+					Expect(initVolume.InitializeCallCount()).To(Equal(0))
 				})
 			})
 		})
