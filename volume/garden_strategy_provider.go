@@ -26,7 +26,7 @@ func NewGardenStrategyProvider(filesystem Filesystem, runner command_runner.Comm
 }
 
 func (p *gardenStrategyProvider) ProvideStrategy(rootFsPath string) (Strategy, error) {
-	handle := shaID(rootFsPath)
+	handle := p.generateHandle(rootFsPath)
 
 	liveVolume, exists, err := p.filesystem.LookupVolume(handle)
 	if err != nil {
@@ -39,7 +39,7 @@ func (p *gardenStrategyProvider) ProvideStrategy(rootFsPath string) (Strategy, e
 			return nil, err
 		}
 
-		err = p.runner.Run(exec.Command("cp", "-R", rootFsPath, initVolume.DataPath()))
+		err = p.runner.Run(exec.Command("sh", "-c", fmt.Sprintf("cp -R %s/* %s", rootFsPath, initVolume.DataPath())))
 		if err != nil {
 			initVolume.Destroy()
 			return nil, err
@@ -55,6 +55,6 @@ func (p *gardenStrategyProvider) ProvideStrategy(rootFsPath string) (Strategy, e
 	return &COWStrategy{ParentHandle: liveVolume.Handle()}, nil
 }
 
-func shaID(rootFsPath string) string {
+func (p *gardenStrategyProvider) generateHandle(rootFsPath string) string {
 	return fmt.Sprintf("%x", sha256.Sum256([]byte(rootFsPath)))
 }
