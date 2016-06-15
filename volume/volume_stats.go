@@ -1,5 +1,5 @@
 package volume
 
 type VolumeStats struct {
-	Size uint `json:"size"`
+	SizeInKB uint `json:"size_in_kilobytes"`
 }

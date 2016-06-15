@@ -105,7 +105,7 @@ func (driver *BtrFSDriver) CreateCopyOnWriteLayer(path string, parent string) er
 }
 
 func (driver *BtrFSDriver) GetVolumeSize(path string) (uint, error) {
-	output, _, err := driver.run("btrfs", "qgroup", "show", "-F", "--raw", path)
+	output, _, err := driver.run("btrfs", "qgroup", "show", "-F", "--raw", "--si", "--kbytes", path)
 	if err != nil {
 		return 0, err
 	}

@@ -79,7 +79,7 @@ type Volume interface {
 	// be specified.
 	Release(*time.Duration)
 
-	// Size returns the exclusive size of the volume on disk
+	// Size returns the exclusive size of the volume on disk in KB
 	Size() (uint, error)
 }
 

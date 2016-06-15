@@ -203,7 +203,7 @@ func (repo *repository) GetVolumeStats(handle string) (VolumeStats, bool, error)
 	}
 
 	stats := VolumeStats{
-		Size: size,
+		SizeInKB: size,
 	}
 
 	return stats, true, nil

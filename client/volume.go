@@ -38,7 +38,7 @@ func (cv *clientVolume) Size() (uint, error) {
 		return 0, err
 	}
 
-	return stats.Size, nil
+	return stats.SizeInKB, nil
 }
 
 func (cv *clientVolume) Properties() (baggageclaim.VolumeProperties, error) {

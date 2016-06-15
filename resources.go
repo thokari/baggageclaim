@@ -21,7 +21,7 @@ type VolumeResponse struct {
 }
 
 type VolumeStatsResponse struct {
-	Size uint `json:"size"`
+	SizeInKB uint `json:"size_in_kilobytes"`
 }
 
 type PropertyRequest struct {
